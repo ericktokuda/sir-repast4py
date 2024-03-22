@@ -1,0 +1,2 @@
+rm output/ -rf
+mpirun -n $1 python sir.py params.yaml
