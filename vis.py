@@ -60,10 +60,16 @@ def plot_counts(pospath, outdir):
     W = 640; H = 480
     fig, ax = plt.subplots(figsize=(W*.01, H*.01), dpi=100)
 
+    uticks = df.tick.unique()
     for sirstate, colour in PALETTE.items():
         df2 = df.loc[df.sirstate == sirstate]
-        df3 = df2.groupby('tick').count()
-        ax.plot(df3.index.astype(int), df3.sirstate, c=colour,
+        vals = {tick: 0 for tick in uticks}
+        for tick in uticks:
+            vals[tick] = df2.loc[df2.tick == tick].count().sirstate
+
+        x = np.array(list(vals.keys()))
+        y = vals.values()
+        ax.plot(x, y, c=colour,
                 label=LABELS[sirstate])
 
     ax.set_xlabel('Steps')
@@ -71,6 +77,7 @@ def plot_counts(pospath, outdir):
     plt.legend()
     plt.savefig(outpath, bbox_inches='tight')
     plt.close()
+
 ##########################################################
 if __name__ == "__main__":
     info(datetime.date.today())

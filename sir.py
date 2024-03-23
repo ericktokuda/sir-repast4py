@@ -1,3 +1,5 @@
+"""Example call:
+python sir.py params/sir-light.yaml '{"outdir": "/tmp/foo"}'"""
 from utils import *
 import math
 from typing import Dict, Tuple
@@ -73,7 +75,7 @@ class Human(core.Agent):
     TYPE = 0
 
     def __init__(self, a_id: int, rank: int,
-                 sirstate: int, infcountdown: int):
+                 sirstate: int=STATE.S, infcountdown: int=0):
         super().__init__(id=a_id, type=Human.TYPE, rank=rank)
         self.sirstate = sirstate
         self.infcountdown = infcountdown
@@ -280,16 +282,22 @@ def run(params: Dict):
     model.run()
 
 if __name__ == "__main__":
-    parser = create_args_parser() #TODO: uncomment this later
+    parser = create_args_parser()
     args = parser.parse_args()
     params = init_params(args.parameters_file, args.parameters)
-    # params = init_params('./params.yaml', args.parameters)
-    # params = init_params('./params.yaml', '')
 
-    np.random.seed(params['random.seed']) # Use the same seed in np.random
+    # Use the same seed in np.random
+    np.random.seed(params['random.seed'])
+
     outdir = params['outdir']
     os.makedirs(outdir, exist_ok=True)
+
+    readmepath = create_readme(sys.argv, outdir)
+    t0 = time.time()
     run(params)
+    elapsed = time.time() - t0
+    open(readmepath, 'a').write(f'Elapsed time: {elapsed}')
+
     pospath = pjoin(params['outdir'], params['statesfile'])
     vis.plot_positions(pospath, params['outdir'])
     vis.plot_counts(pospath, params['outdir'])
