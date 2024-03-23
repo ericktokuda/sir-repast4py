@@ -42,7 +42,9 @@ def plot_positions(pospath, outdir):
         # ax.set_yticklabels()
         ax.set_xlim(0, 200)
         ax.set_ylim(0, 200)
-        ax.axis('off')
+        # ax.axis('off')
+        plt.tick_params(left=False, right=False , labelleft=False ,
+                labelbottom=False, bottom=False)
         plt.savefig(outpath)
         plt.close()
 

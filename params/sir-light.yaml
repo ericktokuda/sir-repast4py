@@ -1,0 +1,13 @@
+random.seed: 1
+stop.at: 10.0
+s0: 100
+i0: 2
+r0: 0
+probinf: 1
+inftime: 5
+world.width: 200
+world.height: 200
+run.number: 1
+outdir: '/tmp/out/'
+countsfile: 'agent_counts.csv'
+statesfile: 'agent_states.csv'

@@ -80,16 +80,11 @@ class Human(core.Agent):
         super().__init__(id=a_id, type=Human.TYPE, rank=rank)
         self.sirstate = sirstate
         self.infcountdown = infcountdown
+        self.justinfected = False
 
     def save(self) -> Tuple:
-        """Saves the state of this Human as a Tuple.
-
-        Used to move this Human from one MPI rank to another.
-
-        Returns:
-            The saved state of this Human.
-        """
-        return (self.uid, self.sirstate, self.infcountdown)
+        return (self.uid, self.sirstate, self.infcountdown,
+                self.justinfected)
 
     def step(self):
         # MOVE
@@ -99,8 +94,7 @@ class Human(core.Agent):
         stepx, stepy = np.cos(ang) * h, np.sin(ang) * h
         model.move(self, spacept.x + stepx, spacept.y + stepy)
 
-        prevsirstate = self.sirstate
-        if self.sirstate == I:
+        if self.sirstate == I and (not self.justinfected):
             # INFECT
 
             #NAIVE WAY OF FINDING NEIGHBOURS
@@ -120,11 +114,14 @@ class Human(core.Agent):
                 for ag in np.array(neighbours)[mask]:
                     ag.sirstate = I
                     ag.infcountdown = model.inftime
+                    ag.justinfected = True
 
             # RECOVER
             if self.infcountdown == 0:
                 self.sirstate = R
             self.infcountdown -= 1
+        else:
+            self.justinfected = False
 
         space_pt = model.space.get_location(self)
         return (space_pt)
@@ -158,6 +155,7 @@ def restore_agent(agent_data: Tuple):
     # restore the agent state from the agent_data tuple
     h.sirstate = agent_data[1]
     h.infcountdown = agent_data[2]
+    h.justinfected = agent_data[3]
     return h
 
 
@@ -178,7 +176,8 @@ class Model:
         # self.probrec = params['probrec']
         self.inftime = params['inftime']
         worldarea = params['world.width'] * params['world.height']
-        self.contactradius = .001 * worldarea
+        # self.contactradius = .001 * worldarea
+        self.contactradius = 50
         self.agstepsize = .0001 * worldarea
 
         self.runner = schedule.init_schedule_runner(comm)
@@ -219,7 +218,8 @@ class Model:
         for k0, sirstate in zip(['s0', 'i0', 'r0'], [S, I, R]):
             m = params[k0]
             if sirstate == I:
-                countdowns = np.random.randint(1, self.inftime, size=m)
+                # countdowns = np.random.randint(1, self.inftime, size=m)
+                countdowns = [self.inftime] * m
             else:
                 countdowns = [0] * m
 
@@ -243,7 +243,7 @@ class Model:
         self.log_counts(tick)
         self.context.synchronize(restore_agent)
 
-        dead_humans = []
+        dead_humans = [] # TODO: change the order: infected first
         for h in self.context.agents(Human.TYPE):
             pt = h.step()
 
@@ -283,11 +283,11 @@ def run(params: Dict):
     model.run()
 
 if __name__ == "__main__":
-    # parser = create_args_parser() #TODO: uncomment this later
-    # args = parser.parse_args()
-    # params = init_params(args.parameters_file, args.parameters)
+    parser = create_args_parser() #TODO: uncomment this later
+    args = parser.parse_args()
+    params = init_params(args.parameters_file, args.parameters)
     # params = init_params('./params.yaml', args.parameters)
-    params = init_params('./params.yaml', '')
+    # params = init_params('./params.yaml', '')
 
     np.random.seed(params['random.seed']) # Use the same seed in np.random
     outdir = params['outdir']
