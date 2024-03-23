@@ -3,23 +3,25 @@
 """
 
 import argparse
-import time, datetime
-import os
-from os.path import join as pjoin
 import inspect
 
 import sys
 import numpy as np
 import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from myutils import info, create_readme
-import pandas as pd
+
+from utils import *
+
+PALETTE = {STATE.S: 'green', STATE.I: 'red', STATE.R: 'blue'}
+LABELS = {STATE.S: 'S', STATE.I: 'I', STATE.R: 'R'}
+plt.style.use('ggplot')
 
 ##########################################################
 def main(indir, outdir):
     info(inspect.stack()[0][3] + '()')
     pospath = pjoin(indir, 'agent_pos.csv')
     plot_positions(pospath, outdir)
+    plot_counts(pospath, outdir)
 
 ##########################################################
 def plot_positions(pospath, outdir):
@@ -45,9 +47,30 @@ def plot_positions(pospath, outdir):
         # ax.axis('off')
         plt.tick_params(left=False, right=False , labelleft=False ,
                 labelbottom=False, bottom=False)
-        plt.savefig(outpath)
+        plt.savefig(outpath, bbox_inches='tight')
         plt.close()
 
+##########################################################
+def plot_counts(pospath, outdir):
+    """Short description """
+    info(inspect.stack()[0][3] + '()')
+    df = pd.read_csv(pospath)
+
+    outpath = pjoin(outdir, 'counts.png')
+    W = 640; H = 480
+    fig, ax = plt.subplots(figsize=(W*.01, H*.01), dpi=100)
+
+    for sirstate, colour in PALETTE.items():
+        df2 = df.loc[df.sirstate == sirstate]
+        df3 = df2.groupby('tick').count()
+        ax.plot(df3.index.astype(int), df3.sirstate, c=colour,
+                label=LABELS[sirstate])
+
+    ax.set_xlabel('Steps')
+    ax.set_ylabel('Count')
+    plt.legend()
+    plt.savefig(outpath, bbox_inches='tight')
+    plt.close()
 ##########################################################
 if __name__ == "__main__":
     info(datetime.date.today())

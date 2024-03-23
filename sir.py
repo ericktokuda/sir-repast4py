@@ -1,7 +1,5 @@
-import os, sys
-from os.path import join as pjoin
+from utils import *
 import math
-import numpy as np
 from typing import Dict, Tuple
 from mpi4py import MPI
 from dataclasses import dataclass
@@ -22,7 +20,6 @@ import vis
 
 model = None
 
-S, I, R = 0, 1, 2
 
 @numba.jit((int64[:], int64[:]), nopython=True)
 def is_equal(a1, a2):
@@ -94,14 +91,14 @@ class Human(core.Agent):
         stepx, stepy = np.cos(ang) * h, np.sin(ang) * h
         model.move(self, spacept.x + stepx, spacept.y + stepy)
 
-        if self.sirstate == I and (not self.justinfected):
+        if self.sirstate == STATE.I and (not self.justinfected):
             # INFECT
 
             #NAIVE WAY OF FINDING NEIGHBOURS
             neighbours = []
             loc = model.space.get_location(self)
             for ag in model.context.agents():
-                if ag.sirstate != S: # Can just infect Susceptibles
+                if ag.sirstate != STATE.S: # Can just infect Susceptibles
                     continue
                 loc2 = model.space.get_location(ag)
                 dist = np.linalg.norm(loc.coordinates - loc2.coordinates)
@@ -112,13 +109,13 @@ class Human(core.Agent):
             if len(neighbours) > 0:
                 mask = np.random.rand(len(neighbours)) < model.probinf
                 for ag in np.array(neighbours)[mask]:
-                    ag.sirstate = I
+                    ag.sirstate = STATE.I
                     ag.infcountdown = model.inftime
                     ag.justinfected = True
 
             # RECOVER
             if self.infcountdown == 0:
-                self.sirstate = R
+                self.sirstate = STATE.R
             self.infcountdown -= 1
         else:
             self.justinfected = False
@@ -215,9 +212,9 @@ class Model:
 
         local_bounds = self.space.get_local_bounds()
         i = 0
-        for k0, sirstate in zip(['s0', 'i0', 'r0'], [S, I, R]):
+        for k0, sirstate in zip(['s0', 'i0', 'r0'], [STATE.S, STATE.I, STATE.R]):
             m = params[k0]
-            if sirstate == I:
+            if sirstate == STATE.I:
                 # countdowns = np.random.randint(1, self.inftime, size=m)
                 countdowns = [self.inftime] * m
             else:
@@ -295,4 +292,5 @@ if __name__ == "__main__":
     run(params)
     pospath = pjoin(params['outdir'], params['statesfile'])
     vis.plot_positions(pospath, params['outdir'])
+    vis.plot_counts(pospath, params['outdir'])
     print('FINISHED')
