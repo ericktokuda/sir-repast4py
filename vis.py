@@ -18,20 +18,31 @@ import pandas as pd
 ##########################################################
 def main(indir, outdir):
     info(inspect.stack()[0][3] + '()')
-    # doneflag = pjoin(outdir, 'DONE')
-        #if os.path.exists(doneflag):
-        #  info('We may want to know if it ended!')
-    #  return    
+    pospath = pjoin(indir, 'agent_pos.csv')
+    plot_positions(pospath, outdir)
 
-    # for i in os.listdir('')
-    df = pd.read_csv(pjoin(indir, 'agent_pos.csv'))
-    breakpoint()
-    
+##########################################################
+def plot_positions(pospath, outdir):
+    """Short description """
+    info(inspect.stack()[0][3] + '()')
+    df = pd.read_csv(pospath)
 
-
-    # info('For Aiur!')
-
-    open(doneflag, 'a').write(time.ctime())
+    for t in np.arange(df.tick.min(), df.tick.max() + .01, 1.0):
+        df2 = df.loc[df.tick == t]
+        tint = int((t * 10) // 10)
+        outpath = pjoin(outdir, '{:02d}.png'.format(tint))
+        W = 640; H = 480
+        fig, ax = plt.subplots(figsize=(W*.01, H*.01), dpi=100)
+        for atype in df.agent_type.unique():
+            df3 = df2.loc[df2.agent_type == atype]
+            ax.scatter(df3.posx, df3.posy)
+        # ax.set_xticklabels()
+        # ax.set_yticklabels()
+        ax.set_xlim(0, 200)
+        ax.set_ylim(0, 200)
+        ax.axis('off')
+        plt.savefig(outpath)
+        plt.close()
 
 ##########################################################
 if __name__ == "__main__":

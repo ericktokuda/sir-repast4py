@@ -17,6 +17,8 @@ from repast4py.space import ContinuousPoint as cpt
 from repast4py.space import DiscretePoint as dpt
 from repast4py.space import BorderType, OccupancyType
 
+import vis
+
 model = None
 
 S, I, R = 0, 1, 2
@@ -239,7 +241,7 @@ class Model:
 
         self.runner = schedule.init_schedule_runner(comm)
         self.runner.schedule_repeating_event(1, 1, self.step)
-        self.runner.schedule_repeating_event(1.1, 10, self.log_agents)
+        self.runner.schedule_repeating_event(1.1, 1, self.log_agents)
         self.runner.schedule_stop(params['stop.at'])
         self.runner.schedule_end_event(self.at_end)
 
@@ -377,9 +379,13 @@ def run(params: Dict):
     model = Model(MPI.COMM_WORLD, params)
     model.run()
 
-
 if __name__ == "__main__":
-    parser = create_args_parser()
-    args = parser.parse_args()
-    params = init_params(args.parameters_file, args.parameters)
+    # parser = create_args_parser() #TODO: uncomment this later
+    # args = parser.parse_args()
+    # params = init_params(args.parameters_file, args.parameters)
+    # params = init_params('./params.yaml', args.parameters)
+    params = init_params('./params.yaml', '')
+
     run(params)
+    vis.plot_positions('./output/agent_pos.csv', './output')
+    print('FINISHED')
