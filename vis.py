@@ -33,9 +33,11 @@ def plot_positions(pospath, outdir):
         outpath = pjoin(outdir, '{:02d}.png'.format(tint))
         W = 640; H = 480
         fig, ax = plt.subplots(figsize=(W*.01, H*.01), dpi=100)
-        for atype in df.agent_type.unique():
-            df3 = df2.loc[df2.agent_type == atype]
-            ax.scatter(df3.posx, df3.posy)
+
+        for sirstate, colour in enumerate(['green', 'red', 'blue']):
+            df3 = df2.loc[df2.sirstate == sirstate]
+            ax.scatter(df3.posx, df3.posy, c=colour)
+
         # ax.set_xticklabels()
         # ax.set_yticklabels()
         ax.set_xlim(0, 200)
