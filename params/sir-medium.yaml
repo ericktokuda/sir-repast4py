@@ -1,5 +1,5 @@
 random.seed: 1
-stop.at: 10.0
+stop.at: 10000
 s0: 9999
 i0: 1
 r0: 0
