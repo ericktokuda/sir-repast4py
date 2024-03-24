@@ -1,2 +1,11 @@
+#!/bin/bash
 rm /tmp/out/ -rf
-mpirun -n $1 python sir.py params/sir-light.yaml
+if (( $# < 1 ));
+then
+	PROC=1
+else
+	PROC=$1
+fi
+echo $PROC
+
+mpirun -n $PROC python sir.py params/sir-light.yaml

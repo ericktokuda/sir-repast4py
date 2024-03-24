@@ -18,15 +18,13 @@ from repast4py.space import ContinuousPoint as cpt
 from repast4py.space import DiscretePoint as dpt
 from repast4py.space import BorderType, OccupancyType
 
-import vis
+import spatial, vis
 
-model = None
-
+model = None # Global variable
 
 @numba.jit((int64[:], int64[:]), nopython=True)
 def is_equal(a1, a2):
     return a1[0] == a2[0] and a1[1] == a2[1]
-
 
 spec = [
     ('mo', int32[:]),
@@ -185,25 +183,32 @@ class Model:
         self.runner.schedule_stop(params['stop.at'])
         self.runner.schedule_end_event(self.at_end)
 
-        box = space.BoundingBox(0, params['world.width'], 0, params['world.height'], 0, 0)
-        self.grid = space.SharedGrid('grid', bounds=box, borders=BorderType.Sticky, occupancy=OccupancyType.Multiple,
+        box = space.BoundingBox(0, params['world.width'], 0,
+                                params['world.height'], 0, 0)
+        self.grid = space.SharedGrid('grid', bounds=box,
+                                     borders=BorderType.Sticky,
+                                     occupancy=OccupancyType.Multiple,
                                      buffer_size=2, comm=comm)
         self.context.add_projection(self.grid)
-        self.space = space.SharedCSpace('space', bounds=box, borders=BorderType.Sticky, occupancy=OccupancyType.Multiple,
-                                        buffer_size=2, comm=comm, tree_threshold=100)
+        self.space = space.SharedCSpace('space', bounds=box,
+                                        borders=BorderType.Sticky,
+                                        occupancy=OccupancyType.Multiple,
+                                        buffer_size=2, comm=comm,
+                                        tree_threshold=100)
         self.context.add_projection(self.space)
         self.ngh_finder = GridNghFinder(0, 0, box.xextent, box.yextent)
 
         self.counts = Counts()
         logstatespath = pjoin(params['outdir'], params['statesfile'])
         logcountspath = pjoin(params['outdir'], params['countsfile'])
-        self.agent_logger = logging.TabularLogger(comm,
-                                                  logstatespath,
-                                                  ['tick', 'agent_id', 'agent_type',
-                                                   'agent_uid_rank',
-                                                   'posx', 'posy', 'sirstate'])
-        loggers = logging.create_loggers(self.counts, op=MPI.SUM, rank=self.rank)
-        self.data_set = logging.ReducingDataSet(loggers, self.comm, logcountspath)
+        cols = ['tick', 'agent_id', 'agent_type', 'agent_uid_rank',
+                'posx', 'posy', 'sirstate']
+        self.agent_logger = logging.TabularLogger(comm, logstatespath,
+                                                  cols)
+        loggers = logging.create_loggers(self.counts, op=MPI.SUM,
+                                         rank=self.rank)
+        self.data_set = logging.ReducingDataSet(loggers, self.comm,
+                                                logcountspath)
 
         world_size = comm.Get_size()
 
@@ -225,8 +230,10 @@ class Model:
             for j in range(m):
                 h = Human(i, self.rank, sirstate, countdowns[j])
                 self.context.add(h)
-                x = random.default_rng.uniform(local_bounds.xmin, local_bounds.xmin + local_bounds.xextent)
-                y = random.default_rng.uniform(local_bounds.ymin, local_bounds.ymin + local_bounds.yextent)
+                x = random.default_rng.uniform(local_bounds.xmin,
+                                               local_bounds.xmin + local_bounds.xextent)
+                y = random.default_rng.uniform(local_bounds.ymin,
+                                               local_bounds.ymin + local_bounds.yextent)
                 self.move(h, x, y)
                 i += 1
 
