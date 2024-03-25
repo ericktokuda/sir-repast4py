@@ -10,4 +10,4 @@ world.height: 500
 run.number: 1
 outdir: '/tmp/out/'
 countsfile: 'agent_counts.csv'
-statesfile: 'agent_states.csv'
+posfile: False
