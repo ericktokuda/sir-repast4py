@@ -166,7 +166,8 @@ class Model:
 
         self.runner = schedule.init_schedule_runner(comm)
         self.runner.schedule_repeating_event(1, 1, self.step)
-        self.runner.schedule_repeating_event(1.1, 1, self.log_agents)
+        if params['posfile']:
+            self.runner.schedule_repeating_event(1.1, 1, self.log_agents)
         self.runner.schedule_stop(params['stop.at'])
         self.runner.schedule_end_event(self.at_end)
 
@@ -186,18 +187,17 @@ class Model:
         self.ngh_finder = GridNghFinder(0, 0, box.xextent, box.yextent)
 
         self.counts = Counts()
-        logstatespath = pjoin(params['outdir'], params['statesfile'])
         logcountspath = pjoin(params['outdir'], params['countsfile'])
         cols = ['tick', 'agent_id', 'agent_type', 'agent_uid_rank',
                 'posx', 'posy', 'sirstate']
-        self.agent_logger = logging.TabularLogger(comm, logstatespath,
-                                                  cols)
+        if params['posfile']:
+            logpospath = pjoin(params['outdir'], params['posfile'])
+            self.agent_logger = logging.TabularLogger(comm, logpospath, cols)
         loggers = logging.create_loggers(self.counts, op=MPI.SUM,
                                          rank=self.rank)
         self.data_set = logging.ReducingDataSet(loggers, self.comm,
                                                 logcountspath)
         world_size = comm.Get_size()
-
 
         local_bounds = self.space.get_local_bounds()
         i = 0
@@ -210,8 +210,7 @@ class Model:
                 m += 1
 
             if sirstate == STATE.I:
-                # countdowns = np.random.randint(1, self.inftime, size=m)
-                countdowns = [self.inftime] * m
+                countdowns = [self.inftime] * m # 'Full' countdown at the beginning
             else:
                 countdowns = [0] * m
 
@@ -224,7 +223,6 @@ class Model:
                                                local_bounds.ymin + local_bounds.yextent)
                 self.move(h, x, y)
                 i += 1
-        print(len(list(self.context.agents())))
 
     def at_end(self):
         """Procedures at the end of the simulation."""
@@ -246,7 +244,7 @@ class Model:
             h.step_infection()
 
     def log_agents(self):
-        """"""
+        """Log the state and position of each agent in each step."""
         tick = self.runner.schedule.tick
         for agent in self.context.agents():
             pt = model.space.get_location(agent)
@@ -300,8 +298,8 @@ if __name__ == "__main__":
     run(params)
     open(readmepath, 'a').write(f'Elapsed time: {time.time() - t0}')
 
-    pospath = pjoin(params['outdir'], params['statesfile'])
-    vis.plot_positions(pospath, params['outdir'])
-    vis.plot_counts(pospath, params['outdir'])
+    # pospath = pjoin(params['outdir'], params['posfile'])
+    # vis.plot_positions(pospath, params['outdir'])
+    # vis.plot_counts(pospath, params['outdir'])
 
     info('FINISHED')
