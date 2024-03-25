@@ -19,7 +19,7 @@ plt.style.use('ggplot')
 ##########################################################
 def main(indir, outdir):
     info(inspect.stack()[0][3] + '()')
-    pospath = pjoin(indir, 'agent_pos.csv')
+    pospath = pjoin(indir, 'agent_states.csv')
     plot_positions(pospath, outdir)
     plot_counts(pospath, outdir)
 
@@ -40,11 +40,8 @@ def plot_positions(pospath, outdir):
             df3 = df2.loc[df2.sirstate == sirstate]
             ax.scatter(df3.posx, df3.posy, c=colour)
 
-        # ax.set_xticklabels()
-        # ax.set_yticklabels()
-        ax.set_xlim(0, 200)
-        ax.set_ylim(0, 200)
-        # ax.axis('off')
+        ax.set_xlim(0, 500)
+        ax.set_ylim(0, 500)
         plt.tick_params(left=False, right=False , labelleft=False ,
                 labelbottom=False, bottom=False)
         plt.savefig(outpath, bbox_inches='tight')
