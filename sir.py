@@ -111,7 +111,7 @@ class Human(core.Agent):
             if dist < model.contactradius:
                 neighbours.append(ag)
 
-        # INFECTING
+        # Infect with probability @model.probinf
         if len(neighbours) > 0:
             mask = np.random.rand(len(neighbours)) < model.probinf
             for ag in np.array(neighbours)[mask]:
