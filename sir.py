@@ -161,7 +161,9 @@ class Counts:
     """Dataclass used by repast4py aggregate logging to record
     the number of Humans and Zombies after each tick.
     """
-    humans: int = 0
+    susceptibles: int = 0
+    infected: int = 0
+    recovered: int = 0
 
 
 class Model:
@@ -272,15 +274,18 @@ class Model:
         self.context.remove(agent)
 
     def log_counts(self, tick):
-        # Get the current number of zombies and humans and log
-        num_agents = self.context.size([Human.TYPE])
-        self.counts.humans = num_agents[Human.TYPE]
-        self.data_set.log(tick)
+        agents = self.context.agents()
+        self.counts.susceptibles = self.counts.infected = self.counts.recovered = 0
+        for ag in agents:
+            if ag.sirstate == STATE.S:
+                self.counts.susceptibles += 1
+            elif ag.sirstate == STATE.I:
+                self.counts.infected += 1
+            elif ag.sirstate == STATE.R:
+                self.counts.recovered += 1
 
-        # Do the cross-rank reduction manually and print the result
-        if tick % 10 == 0:
-            human_count = np.zeros(1, dtype='int64')
-            self.comm.Reduce(np.array([self.counts.humans], dtype='int64'), human_count, op=MPI.SUM, root=0)
+        self.data_set.log(tick)
+        # print(self.counts.susceptibles + self.counts.infected + self.counts.recovered)
 
 
 def run(params: Dict):
